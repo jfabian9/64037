@@ -1,0 +1,111 @@
+---
+title: "Assignment 1"
+author: "Jacob Fabian"
+date: "2023-03-02"
+output:
+  pdf_document: default
+  html_document: default
+---
+Part A
+
+Question 1 - What is the main purpose of regularization when training predictive models? 
+
+Answer 1 - Regularization makes things regular or acceptable. In machine learning, regularization shrinks the coefficient towards zero. To prevent overfitting, regularization discourages learning a more complex or flexible model. To reduce the error by fitting a function appropriately on the training set and to avoid over fitting we use regularization.
+
+Question 2. What is the role of a loss function in a predictive model? And name two common loss 
+functions for regression models and two common loss functions for classification models. 
+
+Answer 2 - Loss function is a way to measure how good your prediction model does in terms of being able to predict the expected outcome. If your loss function value is low, then your model will provide good results. To improve performance, the loss function we use to evaluate the models performance needs to be minimized.
+The two common loss functions for regression models are Mean Square Error (MSE) and Mean Absolute Error (MAE). The two common loss functions for classification models are binary-cross-entropy and hinge loss.
+
+Question 3 - Consider the following scenario. You are building a classification model with many hyper parameters on a relatively small dataset. You will see that the training error is extremely small. Can you fully trust this model? 
+
+Answer 3 - The training error will be low since the data set is small and the model will try to fit every data point, which may lead to overfitting. Since the training error is small the model can’t be trusted. 
+
+Question 4. What is the role of the lambda parameter in regularized linear models such as Lasso or Ridge regression models? 
+
+Answer 4 - The lambda parameter controls the amount of regularization applied to the model. The value of lambda determines how much the norm of the coefficient vector constrains the solution. Non-negative value represents a shrinkage parameter, which multiplies in the objective. The lambda balances between minimizing the sum square of the residuals. Larger the lambda, the more the coefficients are shrunk toward zero.
+
+Part B 
+```{r}
+library(ISLR)
+library(dplyr)
+library(glmnet)
+library(caret)
+attach(Carseats)
+summary(Carseats)
+```
+Question 1 - Build a Lasso regression model to predict Sales based on all other attributes ("Price", "Advertising", "Population", "Age", "Income" and "Education").  What is the best value of lambda for such a lasso model?
+
+```{r}
+#Filtering and scaling the input attributes.
+Carseats.Filtered <- Carseats %>% select( "Price", "Advertising", "Population", "Age", "Income", "Education") %>% scale(center = TRUE, scale = TRUE) %>% as.matrix()
+#Converting the input attributes.
+x <- Carseats.Filtered
+#Transfering the response variable into y
+y <- Carseats %>% select("Sales") %>% as.matrix()
+```
+
+```{r}
+#Building
+fit = glmnet(x, y) 
+summary(fit)
+plot(fit)
+print(fit)
+cv_fit <- cv.glmnet(x, y, alpha = 1)
+```
+
+```{r}
+#The best lambda value
+best_lambda <- cv_fit$lambda.min
+best_lambda
+plot(cv_fit)
+```
+
+The best lambda value is 0.004305309.
+
+Question 2. What is the coefficient for the price (normalized) attribute in the best model (i.e. model with the optimal lambda)? 
+
+```{r}
+best_model <- glmnet(x, y, alpha = 1, lambda = best_lambda)
+coef(best_model)
+```
+
+The coefficient for the price attribute is -1.35384596.
+
+Question 3 - How many attributes remain in the model if lambda is set to 0.01? How that number 
+changes if lambda is increased to 0.1? Do you expect more variables to stay in the model (i.e., to have non-zero coefficients) as we increase lambda?
+
+```{r}
+#Lambda set to 0.01
+best_model <- glmnet(x, y, alpha = 1, lambda = 0.01)
+coef(best_model)
+```
+With the lambda is set to 0.01, no coefficients have been eliminated.
+
+```{r}
+#Lambda set to 0.1.
+best_model <- glmnet(x, y, alpha = 1, lambda = 0.1)
+coef(best_model)
+```
+
+When the lambda is set to 0.1, two coefficients have been eliminated. Population and Education have been eliminated. 
+
+```{r}
+#Lambda set to 0.3
+best_model <- glmnet(x, y, alpha = 1, lambda = 0.4)
+coef(best_model)
+```
+When lambda is set at 0.4, Population, Income, and Education have been eliminated. 
+We can conclude that as we increase the lambda, we can't expect to have non-zero coefficients. As we increase the lambda, we increase the coefficients that are reduced towards zero.
+
+Question 4 - Build an elastic-net model with alpha set to 0.6. What is the best value of lambda for such a model? 
+
+```{r}
+el_net = glmnet(x, y, alpha = 0.6)
+plot(el_net, xvar = "lambda")
+plot(cv.glmnet(x, y, alpha = 0.6))
+summary(el_net)
+print(el_net)
+```
+The best lambda value is 0.00654
